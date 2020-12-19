@@ -1,3 +1,4 @@
+@import "~normalize.css";
 @import "roboto.css";
 
 body {
@@ -15,4 +16,11 @@ body {
 
 h1 {
     text-align: center;
+}
+
+pre {
+    display: block;
+    margin: 0 auto;
+    max-width: 1000px;
+    text-align: left;
 }
