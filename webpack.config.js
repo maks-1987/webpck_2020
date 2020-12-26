@@ -1,6 +1,30 @@
 const path = require('path')
 const HTMLWebpackPlugin = require('html-webpack-plugin')
-const {CleanWebpackPlugin} = require('clean-webpack-plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const CopyWebpackPlug = require('copy-webpack-plugin')
+const MiniCssExtrPlugin = require('mini-css-extract-plugin')
+const TerserWebpackPlugin = require('terser-webpack-plugin')
+const OptimizeCssAsstsPlugin = require('optimize-css-assets-webpack-plugin')
+
+const isDev = process.env.NODE_ENV==='development'
+const isProd = !isDev
+
+const optimization = () => {
+    const config = {
+        splitChunks: {
+            chunks: 'all'
+        }
+    }
+
+    if (isProd) {
+        config.minimizer = [
+            new OptimizeCssAsstsPlugin(),
+            new TerserWebpackPlugin()
+        ]
+    }
+
+    return config
+}
 
 module.exports = {
     context: path.resolve(__dirname, 'src'),
@@ -19,25 +43,55 @@ module.exports = {
             '@models': path.resolve(__dirname, 'src/models')
         }
     },
-    optimization: {
-        splitChunks: {
-            chunks: 'all'
-        }
-    },
+    optimization: optimization(),
     devServer: {
-        port: 4300
+        port: 4300,
+        hot: isDev
     },
     plugins: [
         new HTMLWebpackPlugin({
-            template: './index.html'
+            template: './index.html',
+            minify: {
+                collapseWhitespace: isProd
+            }
         }),
-        new CleanWebpackPlugin()
+        new CleanWebpackPlugin(),
+        // new CopyWebpackPlug([
+        //     {
+        //         from: '',
+        //         to: ''
+        //     }
+        // ]),
+        new MiniCssExtrPlugin({
+            filename: '[name].[contenthash].css'
+        })
     ],
     module: {
         rules: [
             {
                 test: /\.css$/,
-                use: ['style-loader', 'css-loader'] 
+                use: [
+                    {
+                        loader: MiniCssExtrPlugin.loader,
+                        options: {
+                            publicPath: ''
+                        },
+                    },
+                    'css-loader'
+                ]
+            },
+            {
+                test: /\.less$/,
+                use: [
+                    {
+                        loader: MiniCssExtrPlugin.loader,
+                        options: {
+                            publicPath: ''
+                        },
+                    },
+                    'css-loader',
+                    'less-loader'
+                ]
             },
             {
                 test: /\.(png|jpg|svg|gif)$/,
