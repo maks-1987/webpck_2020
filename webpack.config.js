@@ -6,7 +6,7 @@ const MiniCssExtrPlugin = require('mini-css-extract-plugin')
 const TerserWebpackPlugin = require('terser-webpack-plugin')
 const OptimizeCssAsstsPlugin = require('optimize-css-assets-webpack-plugin')
 
-const isDev = process.env.NODE_ENV==='development'
+const isDev = process.env.NODE_ENV === 'development'
 const isProd = !isDev
 
 const optimization = () => {
@@ -26,6 +26,24 @@ const optimization = () => {
     return config
 }
 
+const filename = ext => isDev ? `[name].${ext}` : `[name].[contenthash].${ext}`
+
+const cssLoaders = paramtr => {
+    const loaders = [
+        {
+            loader: MiniCssExtrPlugin.loader,
+            options: {
+                publicPath: ''
+            },
+        },
+        'css-loader'
+    ]
+    if (paramtr) {
+        loaders.push(paramtr)
+    }
+    return loaders
+}
+
 module.exports = {
     context: path.resolve(__dirname, 'src'),
     mode: 'development',
@@ -34,7 +52,7 @@ module.exports = {
         analytics: './analytic.js'
     },
     output: {
-        filename: '[name].[contenthash].js',
+        filename: filename('js'),
         path: path.resolve(__dirname, 'dist')
     },
     resolve: {
@@ -56,42 +74,24 @@ module.exports = {
             }
         }),
         new CleanWebpackPlugin(),
-        // new CopyWebpackPlug([
-        //     {
-        //         from: '',
-        //         to: ''
-        //     }
-        // ]),
+        // new CopyWebpackPlug([{from: '',to: ''}]),
         new MiniCssExtrPlugin({
-            filename: '[name].[contenthash].css'
+            filename: filename('css')
         })
     ],
     module: {
         rules: [
             {
                 test: /\.css$/,
-                use: [
-                    {
-                        loader: MiniCssExtrPlugin.loader,
-                        options: {
-                            publicPath: ''
-                        },
-                    },
-                    'css-loader'
-                ]
+                use: cssLoaders()
             },
             {
                 test: /\.less$/,
-                use: [
-                    {
-                        loader: MiniCssExtrPlugin.loader,
-                        options: {
-                            publicPath: ''
-                        },
-                    },
-                    'css-loader',
-                    'less-loader'
-                ]
+                use: cssLoaders('less-loader')
+            },
+            {
+                test: /\.s[ac]ss$/,
+                use: cssLoaders('sass-loader')
             },
             {
                 test: /\.(png|jpg|svg|gif)$/,
@@ -100,6 +100,11 @@ module.exports = {
             {
                 test: /\.(ttf|woff|woff2|eot)$/,
                 use: ['file-loader']
+            },
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                loader: 'babel-loader'
             }
         ]
     }
